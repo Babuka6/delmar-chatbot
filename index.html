@@ -1,1 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Del Mar Photonics — Advanced Photonics Systems</title>
 
+    <!-- Tailwind + DaisyUI (no build step) -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs"></script>
+
+    <style>
+      html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      [x-cloak]{display:none!important}
+    </style>
+  </head>
+  <body class="bg-base-200 text-base-content">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-base-100/90 backdrop-blur border-b">
+      <div class="max-w-screen-xl mx-auto px-4">
+        <div class="h-16 flex items-center justify-between">
+          <a href="/" class="text-lg md:text-xl font-semibold tracking-tight">Del Mar Photonics</a>
+          <nav class="hidden md:flex items-center gap-6">
+            <a class="link link-hover" href="/about.html">About</a>
+            <a class="btn btn-outline btn-sm" href="https://dmphotonics.com" target="_blank" rel="noopener">Browse Legacy Catalog/Docs →</a>
+            <a class="btn btn-primary btn-sm" href="#assistant">Discuss your specs</a>
+          </nav>
+          <button class="md:hidden btn btn-ghost btn-sm" aria-label="Menu">☰</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="bg-base-200">
+      <div class="max-w-screen-xl mx-auto px-4 py-10 md:py-14">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div>
+            <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">
+              Ultrafast lasers, diagnostics & integrated<br class="hidden md:block"> photonics systems
+            </h1>
+            <p class="mt-4 opacity-80 max-w-prose">
+              Since 2005 in San Diego, CA — Ti:Sapphire, Cr:Forsterite, Er/Yb fiber, autocorrelators, SPIDER, FROG, pump–probe & more.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+              <a class="btn btn-primary" href="#assistant">Chat with AI</a>
+              <a class="btn btn-outline" href="#assistant">Spec Intake (20)</a>
+              <a class="btn btn-ghost" href="https://dmphotonics.com" target="_blank" rel="noopener">Legacy Catalog/Docs →</a>
+            </div>
+          </div>
+
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+              <h3 class="card-title">Applications</h3>
+              <ul class="list-disc ml-5 space-y-1 text-sm md:text-base">
+                <li>Multiphoton imaging • Scanning probe microscopy</li>
+                <li>Pump–probe spectroscopy • Fluorescence up-conversion</li>
+                <li>Micromachining • Molecular dynamics • THz generation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER CHAT HUB -->
+    <section id="assistant" class="py-8 md:py-12">
+      <div class="max-w-4xl mx-auto px-4" x-data="ChatHub()" x-init="init()" x-cloak>
+        <!-- Mode switch + help -->
+        <div class="mb-3 flex items-center justify-center gap-3">
+          <div role="tablist" class="tabs tabs-boxed bg-base-100 shadow">
+            <button id="mode-llm" role="tab" class="tab" :class="{'tab-active': mode==='llm'}" @click="switchMode('llm')">AI Q&amp;A</button>
+            <button id="mode-intake" role="tab" class="tab" :class="{'tab-active': mode==='intake'}" @click="switchMode('intake')">Spec Intake (20)</button>
+          </div>
+          <button class="btn btn-ghost btn-xs" @click="openOnboard()" aria-label="What's the difference?">What’s the difference?</button>
+        </div>
+
+        <!-- hint -->
+        <p class="text-center text-xs opacity-70 mb-4" x-text="mode==='llm'
+          ? 'Talk to our Agent: ask anything about products/applications. Short, factual answers.'
+          : 'Spec Intake (20): already know your requirements? Fill 20 fields and we’ll email your summary.'"></p>
+
+        <!-- Chat card -->
+        <div class="card bg-base-100 shadow-2xl">
+          <div class="card-body">
+            <!-- LLM -->
+            <template x-if="mode==='llm'">
+              <div class="flex flex-col">
+                <div class="font-semibold mb-2">AI Q&amp;A</div>
+                <div class="h-[60vh] max-h-[70vh] overflow-y-auto space-y-2 text-sm border rounded-lg p-3" id="log-llm" aria-live="polite"></div>
+                <div class="mt-3 flex gap-2">
+                  <input x-model="llmInput" @keydown.enter="sendLLM()" class="input input-bordered flex-1" placeholder="Ask anything about our products or applications..."/>
+                  <button class="btn btn-primary" @click="sendLLM()">Send</button>
+                </div>
+                <p class="text-xs opacity-70 mt-2">No pricing/lead times in chat. We’ll follow up by email if needed.</p>
+              </div>
+            </template>
+
+            <!-- INTAKE -->
+            <template x-if="mode==='intake'">
+              <div class="flex flex-col">
+                <div class="font-semibold mb-2">Spec Intake</div>
+                <div class="h-[60vh] max-h-[70vh] overflow-y-auto space-y-2 text-sm border rounded-lg p-3" id="log-intake" aria-live="polite"></div>
+                <div class="mt-3 flex gap-2">
+                  <input x-model="intakeInput" @keydown.enter="sendIntake()" class="input input-bordered flex-1" placeholder="Answer the question… or type to respond"/>
+                  <button class="btn btn-secondary" @click="sendIntake()">Send</button>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-xs opacity-70">
+                  <div>Progress: <span x-text="`${Math.min(intake.idx, QUESTIONS.length)}/${QUESTIONS.length}`"></span></div>
+                  <button class="btn btn-accent btn-xs" x-show="canComplete()" @click="submitSummary()">Finish &amp; Email Summary</button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- toast on mode switch -->
+        <div class="toast toast-center" x-show="toast" x-transition>
+          <div class="alert alert-info text-sm">
+            <span x-text="toast"></span>
+          </div>
+        </div>
+
+        <!-- Onboarding modal -->
+        <dialog x-ref="onboard" class="modal">
+          <div class="modal-box">
+            <h3 class="font-bold text-lg mb-2">Choose how you want to get help</h3>
+            <div class="space-y-3 text-sm">
+              <div class="p-3 rounded-lg bg-base-200">
+                <div class="font-semibold mb-1">Talk to our Agent (AI Q&amp;A)</div>
+                <p>Ask anything about products, tools, and applications. We’ll give short, factual answers and guide you.</p>
+              </div>
+              <div class="p-3 rounded-lg bg-base-200">
+                <div class="font-semibold mb-1">Spec Intake (20)</div>
+                <p>Already know your requirements? Fill 20 structured fields. We’ll email your summary to our team.</p>
+              </div>
+              <label class="label cursor-pointer justify-start gap-2">
+                <input type="checkbox" class="checkbox checkbox-sm" x-model="dontShowAgain">
+                <span class="label-text">Don’t show this again</span>
+              </label>
+            </div>
+            <div class="modal-action">
+              <button class="btn" @click="choose('llm')">Talk to our Agent</button>
+              <button class="btn btn-primary" @click="choose('intake')">Fill Spec Form (20)</button>
+            </div>
+          </div>
+        </dialog>
+      </div>
+    </section>
+
+    <!-- Chat logic -->
+    <script>
+      /* API base (fixes 405 when static server is on 5500/8080 and API on 8000) */
+      const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:8000'
+        : ''; // same-origin in prod
+
+      function ChatHub(){
+        const QUESTIONS = [
+          {key:"name", label:"What's your name/company?"},
+          {key:"email", label:"Best email to reach you?"},
+          {key:"phone", label:"Phone (optional)?"},
+          {key:"application", label:"Application area (e.g., multiphoton imaging, pump–probe, THz)?"},
+          {key:"laser_type", label:"Laser type (Ti:Sapphire, Cr:Forsterite, Er/Yb fiber, Nd:YAG, other)?"},
+          {key:"wavelength", label:"Central wavelength (nm) or range?"},
+          {key:"pulse_duration", label:"Target pulse duration (fs/ps)?"},
+          {key:"rep_rate", label:"Repetition rate (kHz/MHz)?"},
+          {key:"avg_power", label:"Average power target (mW/W)?"},
+          {key:"pulse_energy", label:"Pulse energy target (µJ/mJ)?"},
+          {key:"beam_quality", label:"Beam quality/M² requirements?"},
+          {key:"measurement", label:"Measurement tool needed (autocorrelator, SPIDER, FROG, pump–probe, etc.)?"},
+          {key:"environment", label:"Sample/environment constraints (temp, humidity, vacuum)?"},
+          {key:"integration", label:"Integration (existing optics/microscope/stages)?"},
+          {key:"footprint", label:"Footprint/form factor limits?"},
+          {key:"io", label:"Trigger/sync/DAQ I/O needs?"},
+          {key:"compliance", label:"Compliance/certifications (CE, RoHS, safety)?"},
+          {key:"qty", label:"Quantity (single/pilot)?"},
+          {key:"timeline", label:"Target delivery window/timeline?"},
+          {key:"budget", label:"Budget band (rough)?"}
+        ];
+
+        return {
+          mode: 'llm',
+          toast: "",
+          dontShowAgain: false,
+          QUESTIONS,
+
+          // LLM state
+          llm: { inited:false, transcript:[] },
+          llmInput: "",
+
+          // Intake state
+          intake: { inited:false, transcript:[], answers:{}, idx:0 },
+          intakeInput: "",
+
+          init(){
+            const seen = localStorage.getItem('dmp_onboard_seen');
+            if(!seen){ this.$refs.onboard.showModal(); }
+            else { this.switchMode('llm'); }
+          },
+
+          /* Onboarding */
+          openOnboard(){ this.$refs.onboard.showModal(); },
+          choose(m){
+            if(this.dontShowAgain) localStorage.setItem('dmp_onboard_seen','1');
+            this.$refs.onboard.close();
+            this.switchMode(m);
+          },
+
+          /* Mode switch */
+          switchMode(m){
+  // set mode + hint
+  if (this.mode !== m) {
+    this.mode = m;
+    this.toast = (m==='llm')
+      ? "AI Q&A: ask anything about products/applications."
+      : "Spec Intake: fill 20 fields; we’ll email your summary.";
+    setTimeout(()=>{ this.toast=""; }, 2200);
+  }
+
+  // IMPORTANT: wait for the template <template x-if> to mount the log divs
+  this.$nextTick(() => {
+    if (m === 'llm' && !this.llm.inited) {
+      this.llm.inited = true;
+      this.llmBot("Hi! Ask me about our products, tools, and applications.");
+      this.renderLLM();            // now #log-llm definitely exists
+    }
+    if (m === 'intake' && !this.intake.inited) {
+      this.intake.inited = true;
+      this.intakeBot("I’ll collect your specs so our team can follow up.");
+      this.askNext();              // asks the FIRST question (idx = 0)
+      this.renderIntake();         // now #log-intake definitely exists
+    }
+  });
+
+  // keep it in view
+  document.getElementById('assistant')
+    .scrollIntoView({behavior:'smooth', block:'start'});
+},
+
+
+          /* --------- LLM --------- */
+          llmBot(text){ this.llm.transcript.push({role:"assistant", text}); },
+          llmUser(text){ this.llm.transcript.push({role:"user", text}); },
+          renderLLM(){
+            const log = document.getElementById('log-llm');
+            if(!log) return;
+            log.innerHTML = this.llm.transcript.map(m => `
+              <div class="${m.role==='assistant'?'chat chat-start':'chat chat-end'}">
+                <div class="chat-bubble">${m.text}</div>
+              </div>`).join("");
+            log.scrollTop = log.scrollHeight;
+          },
+          async sendLLM(){
+            const txt = this.llmInput.trim(); if(!txt) return;
+            this.llmUser(txt); this.llmInput=""; this.renderLLM();
+            try{
+              const r = await fetch(`${API_BASE}/chat/answer`, {
+                method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ message: txt })
+              });
+              const data = await r.json();
+              this.llmBot(data.answer || "Thanks!");
+            }catch(e){ this.llmBot("Server error. Please try again."); }
+            this.renderLLM();
+          },
+
+          /* --------- Intake --------- */
+          intakeBot(text){ this.intake.transcript.push({role:"assistant", text}); },
+          intakeUser(text){ this.intake.transcript.push({role:"user", text}); },
+          renderIntake(){
+            const log = document.getElementById('log-intake');
+            if(!log) return;
+            log.innerHTML = this.intake.transcript.map(m => `
+              <div class="${m.role==='assistant'?'chat chat-start':'chat chat-end'}">
+                <div class="chat-bubble">${m.text}</div>
+              </div>`).join("");
+            log.scrollTop = log.scrollHeight;
+          },
+          askNext(){
+            if(this.intake.idx < this.QUESTIONS.length){
+              this.intakeBot(this.QUESTIONS[this.intake.idx].label);
+            } else {
+              this.intakeBot("Great—click “Finish & Email Summary” anytime.");
+            }
+            this.renderIntake();
+          },
+          async sendIntake(){
+            const txt = this.intakeInput.trim(); if(!txt) return;
+            this.intakeUser(txt); this.intakeInput=""; this.renderIntake();
+            if(this.intake.idx < this.QUESTIONS.length){
+              const key = this.QUESTIONS[this.intake.idx].key;
+              this.intake.answers[key] = txt;
+              this.intake.idx++;
+              this.askNext();
+            }
+          },
+          canComplete(){
+            const email = (this.intake.answers.email || "").trim();
+            return this.intake.idx >= this.QUESTIONS.length && /\S+@\S+\.\S+/.test(email);
+          },
+          async submitSummary(){
+            const email = (this.intake.answers.email || "").trim();
+            if(!/\S+@\S+\.\S+/.test(email)){ this.intakeBot("Please enter a valid email first."); this.renderIntake(); return; }
+            const payload = { answers: this.intake.answers, transcript: this.intake.transcript };
+            try{
+              const r = await fetch(`${API_BASE}/chat/complete`, {
+                method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify(payload)
+              });
+              if(r.ok){ this.intakeBot("Sent! We’ll reply by email shortly."); }
+              else { this.intakeBot("Couldn’t send email. Please try again."); }
+            }catch(e){ this.intakeBot("Network error while sending email."); }
+            this.renderIntake();
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
